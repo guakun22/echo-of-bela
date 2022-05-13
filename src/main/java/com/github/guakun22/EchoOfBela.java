@@ -3,6 +3,7 @@ package com.github.guakun22;
 import com.github.zxh.classpy.classfile.ClassFile;
 import com.github.zxh.classpy.classfile.ClassFileParser;
 import com.github.zxh.classpy.classfile.MethodInfo;
+import com.github.zxh.classpy.classfile.bytecode.Instruction;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,6 +53,20 @@ public class EchoOfBela {
         localVariblesForMainStackFrame[0] = null;
         methodStack.push(new StackFrame(localVariblesForMainStackFrame, methodInfo));
 
+        PCRegister pcRegister = new PCRegister(methodStack);
+        while (true) {
+            Instruction instruction = pcRegister.getNextInstruction();
+
+            if (Objects.isNull(instruction)) {
+                break;
+            }
+
+            switch (instruction.getOpcode()) {
+                default:
+                    throw  new IllegalStateException("Opcode" + instruction.getOpcode() + "还没被贝拉支持!");
+            }
+        }
+
         System.out.println("mainClassFile = " + mainClassFile);
     }
 
@@ -60,6 +75,14 @@ public class EchoOfBela {
 
         public PCRegister(Stack<StackFrame> methodStack) {
             this.methodStack = methodStack;
+        }
+
+        public Instruction getNextInstruction() {
+            if (methodStack.isEmpty()) {
+                return null;
+            }
+            StackFrame frameAtTop = methodStack.peek();
+            return frameAtTop.getNextInstruction();
         }
     }
 
@@ -73,6 +96,11 @@ public class EchoOfBela {
         public StackFrame(Object[] localVariables, MethodInfo methodInfo) {
             this.localVariables = localVariables;
             this.methodInfo = methodInfo;
+        }
+
+        int currentInstructionIndex = 0;
+        public Instruction getNextInstruction() {
+            return methodInfo.getCode().get(currentInstructionIndex++);
         }
     }
 
