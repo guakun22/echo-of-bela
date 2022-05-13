@@ -48,7 +48,19 @@ public class EchoOfBela {
         // 执行主方法
         Stack<StackFrame> methodStack = new Stack<>();
 
+        Object[] localVariblesForMainStackFrame = new Object[methodInfo.getMaxStack()];
+        localVariblesForMainStackFrame[0] = null;
+        methodStack.push(new StackFrame(localVariblesForMainStackFrame, methodInfo));
+
         System.out.println("mainClassFile = " + mainClassFile);
+    }
+
+    static class PCRegister {
+        Stack<StackFrame> methodStack;
+
+        public PCRegister(Stack<StackFrame> methodStack) {
+            this.methodStack = methodStack;
+        }
     }
 
     static class StackFrame {
@@ -58,9 +70,8 @@ public class EchoOfBela {
 
         MethodInfo methodInfo;
 
-        public StackFrame(Object[] localVariables, Stack<Object> operandStack, MethodInfo methodInfo) {
+        public StackFrame(Object[] localVariables, MethodInfo methodInfo) {
             this.localVariables = localVariables;
-            this.operandStack = operandStack;
             this.methodInfo = methodInfo;
         }
     }
