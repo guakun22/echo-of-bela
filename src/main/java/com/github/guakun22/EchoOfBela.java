@@ -5,10 +5,8 @@ import com.github.zxh.classpy.classfile.ClassFileParser;
 import com.github.zxh.classpy.classfile.MethodInfo;
 import com.github.zxh.classpy.classfile.bytecode.Instruction;
 import com.github.zxh.classpy.classfile.bytecode.InstructionCp2;
-import com.github.zxh.classpy.classfile.constant.ConstantClassInfo;
-import com.github.zxh.classpy.classfile.constant.ConstantFieldrefInfo;
-import com.github.zxh.classpy.classfile.constant.ConstantNameAndTypeInfo;
-import com.github.zxh.classpy.classfile.constant.ConstantPool;
+import com.github.zxh.classpy.classfile.bytecode.Sipush;
+import com.github.zxh.classpy.classfile.constant.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,16 +67,13 @@ public class EchoOfBela {
             switch (instruction.getOpcode()) {
                 case getstatic: {
                     int fieldIndex = InstructionCp2.class.cast(instruction).getTargetFieldIndex();
-                    // 从栈顶元素所在的类获取常量池
                     ConstantPool constantPool = pcRegister.getTopFrameClassConstantPool();
-
                     ConstantFieldrefInfo fieldrefInfo = constantPool.getFieldrefInfo(fieldIndex);
-
                     ConstantClassInfo classInfo = fieldrefInfo.getClassInfo(constantPool);
-                    ConstantNameAndTypeInfo fieldNameAndTypeInfo = fieldrefInfo.getFieldNameAndTypeInfo(constantPool);
+                    ConstantNameAndTypeInfo nameAndTypeInfo = fieldrefInfo.getFieldNameAndTypeInfo(constantPool);
 
                     String className = constantPool.getUtf8String(classInfo.getNameIndex());
-                    String fieldName = fieldNameAndTypeInfo.getName(constantPool);
+                    String fieldName = nameAndTypeInfo.getName(constantPool);
 
                     if ("java/lang/System".equals(className) && "out".equals(fieldName)) {
                         Object field = System.out;
@@ -86,25 +81,72 @@ public class EchoOfBela {
                     } else {
                         throw new IllegalStateException("还没支持呢！");
                     }
-                    System.out.println("fieldName = " + fieldName);
                 }
                 break;
                 case invokestatic: {
+                    String className = getClassNameFromInvokeInstruction(instruction, pcRegister.getTopFrameClassConstantPool());
+                    String methodName = getMethodNameFromInvokeInstruction(instruction, pcRegister.getTopFrameClassConstantPool());
+
+                    ClassFile classFile = loadClassFromClassPath(className);
+                    MethodInfo targetMethodInfo = classFile.getMethod(methodName).get(0);
+
+                    Object[] targetLocalVariables = new Object[targetMethodInfo.getMaxStack()];
+                    StackFrame newFrame = new StackFrame(targetLocalVariables, targetMethodInfo, classFile);
+
+                    // TODO 应该分析方法的参数，从操作数栈上弹出对应数量的参数放在新栈帧的局部变量表中
+                    methodStack.push(newFrame);
+                }
+                break;
+                case sipush: {
+                    Sipush sipush = (Sipush) instruction;
+                    pcRegister.getTopFrame().pushObjectToOperandStack(sipush.getOperand());
+                }
+                break;
+                case ireturn: {
+                    Object returnValue = pcRegister.getTopFrame().popFromOperandStack();
+                    pcRegister.popFrameFromMethodStack();
+                    pcRegister.getTopFrame().pushObjectToOperandStack(returnValue);
                 }
                 break;
                 case invokevirtual: {
+                    String className = getClassNameFromInvokeInstruction(instruction, pcRegister.getTopFrameClassConstantPool());
+                    String methodName = getMethodNameFromInvokeInstruction(instruction, pcRegister.getTopFrameClassConstantPool());
+
+                    if ("java/io/PrintStream".equals(className) && "println".equals(methodName)) {
+
+                        Object param = pcRegister.getTopFrame().popFromOperandStack();
+                        Object thisObject = pcRegister.getTopFrame().popFromOperandStack();
+
+                        System.out.println(param);
+                    } else {
+                        throw new IllegalStateException("贝拉还没支持呢！");
+                    }
                 }
                 break;
                 case _return: {
+                    pcRegister.popFrameFromMethodStack();
                 }
                 break;
                 default:
                     throw new IllegalStateException("Opcode " + instruction.getOpcode() + ", 还没被贝拉支持!");
             }
         }
-
-        System.out.println("mainClassFile = " + mainClassFile);
     }
+
+    private String getClassNameFromInvokeInstruction(Instruction instruction, ConstantPool constantPool) {
+        int methodIndex = InstructionCp2.class.cast(instruction).getTargetMethodIndex();
+        ConstantMethodrefInfo methodrefInfo = constantPool.getMethodrefInfo(methodIndex);
+        ConstantClassInfo classInfo = methodrefInfo.getClassInfo(constantPool);
+        return constantPool.getUtf8String(classInfo.getNameIndex());
+    }
+
+    private String getMethodNameFromInvokeInstruction(Instruction instruction, ConstantPool constantPool) {
+        int methodIndex = InstructionCp2.class.cast(instruction).getTargetMethodIndex();
+        ConstantMethodrefInfo methodrefInfo = constantPool.getMethodrefInfo(methodIndex);
+        ConstantClassInfo classInfo = methodrefInfo.getClassInfo(constantPool);
+        return methodrefInfo.getMethodNameAndType(constantPool).getName(constantPool);
+    }
+
 
     static class PCRegister {
         Stack<StackFrame> methodStack;
@@ -127,6 +169,10 @@ public class EchoOfBela {
 
         public ConstantPool getTopFrameClassConstantPool() {
             return getTopFrame().getClassFile().getConstantPool();
+        }
+
+        public void popFrameFromMethodStack() {
+            methodStack.pop();
         }
     }
 
@@ -157,6 +203,10 @@ public class EchoOfBela {
 
         public void pushObjectToOperandStack(Object object) {
             operandStack.push(object);
+        }
+
+        public Object popFromOperandStack() {
+            return operandStack.pop();
         }
     }
 
