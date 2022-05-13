@@ -2,11 +2,13 @@ package com.github.guakun22;
 
 import com.github.zxh.classpy.classfile.ClassFile;
 import com.github.zxh.classpy.classfile.ClassFileParser;
+import com.github.zxh.classpy.classfile.MethodInfo;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Objects;
+import java.util.Stack;
 import java.util.stream.Stream;
 
 /**
@@ -24,13 +26,13 @@ public class EchoOfBela {
      * @param mainClass        主类的全限定类名
      * @param classPathEntries 启动时的 classpath 使用 {@link java.io.File#pathSeparator} 分割，支持文件夹
      */
-    public EchoOfBela(String mainClass, String classPathEntries) {
-        this.mainClass = mainClass;
+    public EchoOfBela(String classPathEntries, String mainClass) {
         this.classPathEntries = classPathEntries.split(File.pathSeparator);
+        this.mainClass = mainClass;
     }
 
     public static void main(String[] args) {
-        new EchoOfBela("target/classes", "com.github.guakun22.SimpleClass").start();
+        new EchoOfBela("target/classes", "com.github.guakun22.SampleClass").start();
     }
 
     /**
@@ -41,8 +43,15 @@ public class EchoOfBela {
         ClassFile mainClassFile = loadClassFromClassPath(mainClass);
 
         // 加载主方法
+        MethodInfo methodInfo = mainClassFile.getMethod("main").get(0);
 
         // 执行主方法
+        Stack<StackFrame> methodStack = new Stack<>();
+
+        System.out.println("mainClassFile = " + mainClassFile);
+    }
+
+    private class StackFrame {
     }
 
     private ClassFile loadClassFromClassPath(String fqcn) {
@@ -63,4 +72,5 @@ public class EchoOfBela {
             throw null;
         }
     }
+
 }

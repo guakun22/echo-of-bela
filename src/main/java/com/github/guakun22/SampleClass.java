@@ -1,4 +1,4 @@
-package src.main.java.com.github.guakun22;
+package com.github.guakun22;
 
 public class SampleClass {
     public static void main(String[] args) {
