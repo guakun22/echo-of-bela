@@ -51,7 +51,15 @@ public class EchoOfBela {
         System.out.println("mainClassFile = " + mainClassFile);
     }
 
-    private class StackFrame {
+    static class StackFrame {
+        Object[] localVariables;
+
+        Stack<Object> operandStack = new Stack<>();
+
+        public StackFrame(Object[] localVariables, Stack<Object> operandStack) {
+            this.localVariables = localVariables;
+            this.operandStack = operandStack;
+        }
     }
 
     private ClassFile loadClassFromClassPath(String fqcn) {
