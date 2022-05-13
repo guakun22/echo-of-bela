@@ -21,6 +21,18 @@ public class EchoOfBela {
         this.classPathEntries = classPathEntries;
     }
 
+
+    /**
+     * 启动并运行该虚拟机
+     */
+    public void start() {
+        // 加载主类
+
+        // 加载主方法
+
+        // 执行主方法
+    }
+
     public static void main(String[] args) {
     }
 }
