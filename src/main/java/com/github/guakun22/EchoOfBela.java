@@ -56,9 +56,12 @@ public class EchoOfBela {
 
         Stack<Object> operandStack = new Stack<>();
 
-        public StackFrame(Object[] localVariables, Stack<Object> operandStack) {
+        MethodInfo methodInfo;
+
+        public StackFrame(Object[] localVariables, Stack<Object> operandStack, MethodInfo methodInfo) {
             this.localVariables = localVariables;
             this.operandStack = operandStack;
+            this.methodInfo = methodInfo;
         }
     }
 
